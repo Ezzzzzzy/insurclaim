@@ -37,7 +37,7 @@ export default function InsurancePolicyForm({
             </div>
 
             <div className="grid gap-2">
-                <label htmlFor="memberName" className="text-sm font-medium leading-none">Insured Member's Name</label>
+                <label htmlFor="memberName" className="text-sm font-medium leading-none">Insured Member&apos;s Name</label>
                 <input
                     id="memberName"
                     type="text"
