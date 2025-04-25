@@ -1,0 +1,170 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+    provider = "prisma-client-js"
+}
+
+datasource db {
+    provider = "mysql"
+    // NOTE: When using mysql or sqlserver, uncomment the @db.Text annotations in model Account below
+    // Further reading:
+    // https://next-auth.js.org/adapters/prisma#create-the-prisma-schema
+    // https://www.prisma.io/docs/reference/api-reference/prisma-schema-reference#string
+    url      = env("DATABASE_URL")
+}
+
+enum Gender {
+  Male
+  Female
+  Other
+}
+
+enum GovernmentIdType {
+  Passport
+  DriverLicense
+  SSS
+  PhilHealth
+  Other
+}
+
+model User {
+  id         String   @id @default(uuid())
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  deletedAt  DateTime?
+  firstName  String
+  lastName   String
+  email      String   @unique
+  password   String
+  isActive   Boolean
+}
+
+model Patient {
+  id                    String   @id @default(uuid())
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  deletedAt             DateTime?
+  firstName             String
+  lastName              String
+  middleName            String?
+  dateOfBirth           DateTime
+  gender                Gender
+  contactNumber         String?
+  email                 String?  @unique
+  address               String?
+  governmentIdType      GovernmentIdType?
+  governmentIdNumber    String?  @unique
+  governmentIdFile      String? // Store file path/URL
+  claims                Claim[]
+  hospitalPatients      HospitalPatient[]
+}
+
+model Hospital {
+  id                  String   @id @default(uuid())
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  deletedAt           DateTime?
+  name                String   @unique
+  address             String?
+  contactNumber       String?
+  email               String?
+  website             String?
+  bankAccountDetails  Json?
+  claims              Claim[]
+  hospitalPatients    HospitalPatient[]
+  payments            Payment[]
+}
+
+model InsuranceCompany {
+  id               String   @id @default(uuid())
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  deletedAt        DateTime?
+  name             String   @unique
+  address          String?
+  contactNumber    String?
+  email            String?
+  website          String?
+  claims           Claim[]
+  reimbursements   Reimbursement[]
+}
+
+model Claim {
+  id                  String   @id @default(uuid())
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  deletedAt           DateTime?
+  claimAmount         Decimal
+  approvedAmount      Decimal?
+  approvedDate        DateTime?
+  processedBy         String?
+  status              ClaimStatus @default(Pending)
+  policyNumber        String?
+  reasonForRejection  String?
+  attachments         Json?
+  medicalAbstractFile String? // Store file path/URL
+  finalDiagnosisFile  String? // Store file path/URL
+  testResultsFile     String? // Store file path/URL
+  memberName          String?
+  relationship        String?
+  hmoProvider         String?
+  otherHmoProvider    String?
+  loaFile             String? // Store file path/URL
+  soaFile             String? // Store file path/URL
+  hospitalId          String?
+  patientId           String
+  insuranceCompanyId  String?
+  hospital            Hospital? @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+  patient             Patient?  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  insuranceCompany    InsuranceCompany? @relation(fields: [insuranceCompanyId], references: [id], onDelete: Cascade)
+  payments            Payment[]
+  reimbursements      Reimbursement[]
+}
+
+enum ClaimStatus {
+  Pending
+  Approved
+  Rejected
+  Paid
+}
+
+model HospitalPatient {
+  id                String    @id @default(uuid())
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  deletedAt         DateTime?
+  admissionDateTime DateTime?
+  dischargeDateTime DateTime?
+  patientType       String?
+  hospitalId        String?
+  patientId         String?
+  hospital          Hospital? @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+  patient           Patient?  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+}
+
+model Payment {
+  id          String   @id @default(uuid())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  deletedAt   DateTime?
+  amountPaid  Decimal
+  paymentDate DateTime @default(now())
+  claimId     String?
+  hospitalId  String?
+  claim       Claim?    @relation(fields: [claimId], references: [id])
+  hospital    Hospital? @relation(fields: [hospitalId], references: [id])
+}
+
+model Reimbursement {
+  id                  String   @id @default(uuid())
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  deletedAt           DateTime?
+  amountReceived      Decimal
+  receivedDate        DateTime @default(now())
+  claimId             String?
+  insuranceCompanyId  String?
+  claim               Claim?             @relation(fields: [claimId], references: [id])
+  insuranceCompany    InsuranceCompany? @relation(fields: [insuranceCompanyId], references: [id])
+}
